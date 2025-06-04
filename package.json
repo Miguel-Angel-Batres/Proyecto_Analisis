@@ -1,0 +1,28 @@
+{
+  "name": "proyecto_analisis",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Miguel-Angel-Batres/Proyecto_Analisis.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Miguel-Angel-Batres/Proyecto_Analisis/issues"
+  },
+  "homepage": "https://github.com/Miguel-Angel-Batres/Proyecto_Analisis#readme",
+  "dependencies": {
+    "express": "^5.1.0",
+    "firebase": "^11.8.1",
+    "nodemon": "^3.1.10"
+  }
+}
