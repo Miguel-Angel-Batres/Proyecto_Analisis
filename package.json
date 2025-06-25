@@ -21,8 +21,10 @@
   },
   "homepage": "https://github.com/Miguel-Angel-Batres/Proyecto_Analisis#readme",
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^5.1.0",
     "firebase": "^11.8.1",
+    "multer": "^2.0.1",
     "nodemon": "^3.1.10"
   }
 }

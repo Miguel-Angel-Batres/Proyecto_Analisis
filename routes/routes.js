@@ -1,21 +1,85 @@
 const express = require('express');
+const multer = require('multer');
+const { initializeApp } = require('firebase/app');
+const { getFirestore } = require('firebase/firestore');
+const { getAuth } = require('firebase/auth'); 
+const firebaseConfig = require('../key.json'); 
+
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
+const auth = getAuth(firebaseApp);
+
 const { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc } = require('firebase/firestore');
 
-module.exports = (db) => {
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+module.exports = () => {
     const router = express.Router();
 
     router.get('/', (req, res) => {
         res.send('Bienvenido a la página principal');
     });
+    router.get('/start', (req, res) => {
+        res.send('Servidor iniciado correctamente');
+    });
+    router.post('/usuarios', upload.single('profilePicture'), async (req, res) => {
+        
 
-    router.post('/usuarios', async (req, res) => {
+        const { email, password, phone, name } = req.body;
+        const profilePicture = req.file;
+
         try {
-            const { nombre, correo, telefono, contraseña } = req.body;
-            const usuarioData = { nombre, correo, telefono, contraseña };
+            const usuarioData = {
+                email: email,
+                phone: phone,
+                nombre: name,
+                password: password, 
+                profilePicture: profilePicture ? profilePicture.buffer.toString('base64') : null,
+            };
+
             const docRef = await addDoc(collection(db, 'usuarios'), usuarioData);
-            res.status(201).json({ message: 'Usuario agregado exitosamente', id: docRef.id });
+
+            console.log('Usuario guardado en la base de datos con ID:', docRef.id);
+
+            res.status(201).json({ 
+                message: 'Usuario creado exitosamente', 
+                dbId: docRef.id 
+            });
         } catch (error) {
+            console.error('Error al crear usuario:', error);
             res.status(500).json({ error: error.message });
+        }
+    });
+    router.post('/login', async (req, res) => {
+        const { email, password } = req.body;
+    
+        try {
+            const usersSnapshot = await getDocs(collection(db, 'usuarios'));
+            const userDoc = usersSnapshot.docs.find(doc => doc.data().email === email);
+    
+            if (!userDoc) {
+                return res.status(404).json({ error: 'Usuario no encontrado' });
+            }
+    
+            const userData = userDoc.data();
+            if (userData.password !== password) {
+                return res.status(401).json({ error: 'Credenciales incorrectas' });
+            }
+    
+            res.status(200).json({
+                message: 'Usuario autenticado',
+                user: {
+                    id: userDoc.id,
+                    email: userData.email,
+                    name: userData.nombre,
+                    profilePicture: userData.profilePicture || null
+                },
+            });
+            console.log('Usuario autenticado exitosamente:', userDoc.id);
+        } catch (error) {
+            console.error('Error al autenticar usuario:', error);
+            res.status(500).json({ error: 'Error interno del servidor' });
         }
     });
 
