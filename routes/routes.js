@@ -9,11 +9,11 @@ const {
   getDoc,
 } = require("firebase/firestore");
 
-const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
+// const storage = multer.memoryStorage();
+// const upload = multer({ storage: storage });
 
 module.exports = () => {
-    const router = express.Router();
+  const router = express.Router();
 
   router.get("/", (req, res) => {
     res.send("Bienvenido a la página principal");
