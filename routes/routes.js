@@ -3,7 +3,7 @@ const multer = require('multer');
 const { initializeApp } = require('firebase/app');
 const { getFirestore } = require('firebase/firestore');
 const { getAuth } = require('firebase/auth'); 
-const firebaseConfig = require('../key.json'); 
+const firebaseConfig = require('/etc/secrets/key.json');
 
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
