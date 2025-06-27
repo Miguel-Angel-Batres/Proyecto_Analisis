@@ -73,7 +73,8 @@ module.exports = () => {
                     id: userDoc.id,
                     email: userData.email,
                     name: userData.nombre,
-                    profilePicture: userData.profilePicture || null
+                    profilePicture: userData.profilePicture || null,
+                    rol: userData.rol || 'usuario', 
                 },
             });
             console.log('Usuario autenticado exitosamente:', userDoc.id);
@@ -164,17 +165,27 @@ module.exports = () => {
             res.status(500).json({ error: error.message });
         }
     });
-    // Manejo de servicios, su precio duracion, descripcion,etc.
-    router.post('/servicios', async (req, res) => {
+    router.post('/servicios', upload.single('imagen'), async (req, res) => {
         try {
-            const { nombre, descripcion, precio, duracion, categoria, imagen } = req.body;
-            const servicioData = { nombre, descripcion, precio, duracion, categoria, imagen };
-            const docRef = await addDoc(collection(db, 'servicios'), servicioData);
-            res.status(201).json({ message: 'Servicio agregado exitosamente', id: docRef.id });
+          const { nombre, descripcion, precio, duracion, categoria } = req.body;
+          const imagen = req.file ? req.file.buffer.toString('base64') : null;
+
+          console.log('Imagen recibida:', req.file);
+          console.log('Imagen en base64:', imagen);
+      
+          if (!nombre || !descripcion || !precio || !duracion || !categoria || !imagen) {
+            return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+          }
+      
+          const servicioData = { nombre, descripcion, precio, duracion, categoria, imagen };
+          const docRef = await addDoc(collection(db, 'servicios'), servicioData);
+      
+          res.status(201).json({ message: 'Servicio agregado exitosamente', id: docRef.id });
         } catch (error) {
-            res.status(500).json({ error: error.message });
+          console.error('Error al agregar el servicio:', error);
+          res.status(500).json({ error: error.message });
         }
-    });
+      });
     router.get('/servicios', async (req, res) => {
         try {
             const serviciosSnapshot = await getDocs(collection(db, 'servicios'));
@@ -196,14 +207,40 @@ module.exports = () => {
             res.status(500).json({ error: error.message });
         }
     });
+    // put pero sin imagen
     router.put('/servicios/:id', async (req, res) => {
         try {
             const { id } = req.params;
-            const { nombre, descripcion, precio, duracion, categoria, imagen } = req.body;
+            const { nombre, descripcion, precio, duracion, categoria } = req.body;
             const servicioRef = doc(db, 'servicios', id);
-            await updateDoc(servicioRef, { nombre, descripcion, precio, duracion, categoria, imagen });
+            const updateData = { nombre, descripcion, precio, duracion, categoria };
+
+            await updateDoc(servicioRef, updateData);
             res.status(200).json({ message: 'Servicio actualizado exitosamente' });
         } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+    router.put('/servicios/:id/imagen', upload.single('imagen'), async (req, res) => {
+        try {
+            const { id } = req.params;
+            const imagen = req.file ? req.file.buffer.toString('base64') : null;
+    
+            if (!imagen) {
+                return res.status(400).json({ error: 'No se proporcionó una imagen' });
+            }
+    
+            const servicioRef = doc(db, 'servicios', id);
+            await updateDoc(servicioRef, { imagen });
+    
+            // Obtén el servicio actualizado
+            const servicioDoc = await getDoc(servicioRef);
+            const servicioActualizado = { id: servicioDoc.id, ...servicioDoc.data() };
+    
+            // Devuelve el servicio actualizado
+            res.status(200).json(servicioActualizado);
+        } catch (error) {
+            console.error('Error al actualizar la imagen:', error);
             res.status(500).json({ error: error.message });
         }
     });
@@ -218,121 +255,7 @@ module.exports = () => {
         }
     });
 
-    // Estilos de uñas, añadir, eliminar, actualizar, ver
-    router.post('/uñas', async (req, res) => {
-        try {
-            const { nombre, tipo, colores, imagen, precio, tendencia } = req.body;
-            const estiloData = { nombre, tipo, colores, imagen, precio, tendencia };
-            const docRef = await addDoc(collection(db, 'estilos'), estiloData);
-            res.status(201).json({ message: 'Estilo agregado exitosamente', id: docRef.id });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    });
-
-    router.get('/uñas', async (req, res) => {
-        try {
-            const estilosSnapshot = await getDocs(collection(db, 'estilos'));
-            const estilos = estilosSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            res.status(200).json(estilos);
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    });
-
-    router.get('/uñas/:id', async (req, res) => {
-        try {
-            const { id } = req.params;
-            const estiloDoc = await getDoc(doc(db, 'estilos', id));
-            if (!estiloDoc.exists()) {
-                return res.status(404).json({ error: 'Estilo no encontrado' });
-            }
-            res.status(200).json({ id: estiloDoc.id, ...estiloDoc.data() });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    });
-
-    router.put('/uñas/:id', async (req, res) => {
-        try {
-            const { id } = req.params;
-            const { nombre, tipo, colores, imagen, precio, tendencia } = req.body;
-            const estiloRef = doc(db, 'estilos', id);
-            await updateDoc(estiloRef, { nombre, tipo, colores, imagen, precio, tendencia });
-            res.status(200).json({ message: 'Estilo actualizado exitosamente' });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    });
-
-    router.delete('/uñas/:id', async (req, res) => {
-        try {
-            const { id } = req.params;
-            const estiloRef = doc(db, 'estilos', id);
-            await deleteDoc(estiloRef);
-            res.status(200).json({ message: 'Estilo eliminado exitosamente' });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    });
-
-    // Peinados, looks, añadir eliminar, actualizar, ver
-    router.post('/peinados', async (req, res) => {
-        try {
-            const { nombre, tipoCabello, imagen, precio, ocasion } = req.body;
-            const peinadoData = { nombre, tipoCabello, imagen, precio, ocasion };
-            const docRef = await addDoc(collection(db, 'peinados'), peinadoData);
-            res.status(201).json({ message: 'Peinado agregado exitosamente', id: docRef.id });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    });
-
-    router.get('/peinados', async (req, res) => {
-        try {
-            const peinadosSnapshot = await getDocs(collection(db, 'peinados'));
-            const peinados = peinadosSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            res.status(200).json(peinados);
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    });
-
-    router.get('/peinados/:id', async (req, res) => {
-        try {
-            const { id } = req.params;
-            const peinadoDoc = await getDoc(doc(db, 'peinados', id));
-            if (!peinadoDoc.exists()) {
-                return res.status(404).json({ error: 'Peinado no encontrado' });
-            }
-            res.status(200).json({ id: peinadoDoc.id, ...peinadoDoc.data() });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    });
-
-    router.put('/peinados/:id', async (req, res) => {
-        try {
-            const { id } = req.params;
-            const { nombre, tipoCabello, imagen, precio, ocasion } = req.body;
-            const peinadoRef = doc(db, 'peinados', id);
-            await updateDoc(peinadoRef, { nombre, tipoCabello, imagen, precio, ocasion });
-            res.status(200).json({ message: 'Peinado actualizado exitosamente' });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    });
-
-    router.delete('/peinados/:id', async (req, res) => {
-        try {
-            const { id } = req.params;
-            const peinadoRef = doc(db, 'peinados', id);
-            await deleteDoc(peinadoRef);
-            res.status(200).json({ message: 'Peinado eliminado exitosamente' });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    });
+    
 
 
     return router;
