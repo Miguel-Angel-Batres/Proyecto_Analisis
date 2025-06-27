@@ -1,21 +1,19 @@
-const express = require('express');
-const multer = require('multer');
-const { initializeApp } = require('firebase/app');
-const { getFirestore } = require('firebase/firestore');
-const { getAuth } = require('firebase/auth'); 
-const firebaseConfig = require('../key.json'); 
+const express = require("express");
+const {
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  updateDoc,
+  deleteDoc,
+  getDoc,
+} = require("firebase/firestore");
 
-const firebaseApp = initializeApp(firebaseConfig);
-const db = getFirestore(firebaseApp);
-const auth = getAuth(firebaseApp);
-
-const { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc } = require('firebase/firestore');
-
-const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
+// const storage = multer.memoryStorage();
+// const upload = multer({ storage: storage });
 
 module.exports = () => {
-    const router = express.Router();
+  const router = express.Router();
 
     router.get('/', (req, res) => {
         res.send('Bienvenido a la página principal');
@@ -84,76 +82,115 @@ module.exports = () => {
         }
     });
 
-    router.put('/usuarios/:id', async (req, res) => {
-        try {
-            const { id } = req.params;
-            const { nombre, correo, telefono, contraseña } = req.body;
-            const usuarioRef = doc(db, 'usuarios', id);
-            await updateDoc(usuarioRef, { nombre, correo, telefono, contraseña });
-            res.status(200).json({ message: 'Usuario actualizado exitosamente' });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    });
+  router.put("/usuarios/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { nombre, correo, telefono, contraseña } = req.body;
+      const usuarioRef = doc(db, "usuarios", id);
+      await updateDoc(usuarioRef, { nombre, correo, telefono, contraseña });
+      res.status(200).json({ message: "Usuario actualizado exitosamente" });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
 
-    router.delete('/usuarios/:id', async (req, res) => {
-        try {
-            const { id } = req.params;
-            const usuarioRef = doc(db, 'usuarios', id);
-            console.log(`Eliminando usuario con ID: ${id}`);
-            await deleteDoc(usuarioRef);
-            console.log(`Usuario con ID: ${id} eliminado exitosamente`);
-            res.status(200).json({ message: 'Usuario eliminado exitosamente' });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    });
+  router.delete("/usuarios/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const usuarioRef = doc(db, "usuarios", id);
+      console.log(`Eliminando usuario con ID: ${id}`);
+      await deleteDoc(usuarioRef);
+      console.log(`Usuario con ID: ${id} eliminado exitosamente`);
+      res.status(200).json({ message: "Usuario eliminado exitosamente" });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
 
-    router.post('/citas', async (req, res) => {
-        try {
-            const { usuarioId, fecha, hora, servicios, duracion, precioTotal, estado, notas } = req.body;
-            const citaData = { usuarioId, fecha, hora, servicios, duracion, precioTotal, estado, notas };
-            const docRef = await addDoc(collection(db, 'citas'), citaData);
-            res.status(201).json({ message: 'Cita creada', id: docRef.id });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    });
+  router.post("/citas", async (req, res) => {
+    try {
+      const {
+        usuarioId,
+        fecha,
+        hora,
+        servicios,
+        duracion,
+        precioTotal,
+        estado,
+        notas,
+      } = req.body;
+      const citaData = {
+        usuarioId,
+        fecha,
+        hora,
+        servicios,
+        duracion,
+        precioTotal,
+        estado,
+        notas,
+      };
+      const docRef = await addDoc(collection(db, "citas"), citaData);
+      res.status(201).json({ message: "Cita creada", id: docRef.id });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
 
-    router.get('/citas', async (req, res) => {
-        try {
-            const citasSnapshot = await getDocs(collection(db, 'citas'));
-            const citas = citasSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            res.status(200).json(citas);
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    });
+  router.get("/citas", async (req, res) => {
+    try {
+      const citasSnapshot = await getDocs(collection(db, "citas"));
+      const citas = citasSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      res.status(200).json(citas);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
 
-    router.get('/citas/:id', async (req, res) => {
-        try {
-            const { id } = req.params;
-            const citaDoc = await getDoc(doc(db, 'citas', id));
-            if (!citaDoc.exists()) {
-                return res.status(404).json({ error: 'Cita no encontrada' });
-            }
-            res.status(200).json({ id: citaDoc.id, ...citaDoc.data() });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    });
+  router.get("/citas/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const citaDoc = await getDoc(doc(db, "citas", id));
+      if (!citaDoc.exists()) {
+        return res.status(404).json({ error: "Cita no encontrada" });
+      }
+      res.status(200).json({ id: citaDoc.id, ...citaDoc.data() });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
 
-    router.put('/citas/:id', async (req, res) => {
-        try {
-            const { id } = req.params;
-            const { usuarioId, fecha, hora, servicios, duracion, precioTotal, estado, notas } = req.body;
-            const citaRef = doc(db, 'citas', id);
-            await updateDoc(citaRef, { usuarioId, fecha, hora, servicios, duracion, precioTotal, estado, notas });
-            res.status(200).json({ message: 'Cita actualizada' });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    });
+  router.put("/citas/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const {
+        usuarioId,
+        fecha,
+        hora,
+        servicios,
+        duracion,
+        precioTotal,
+        estado,
+        notas,
+      } = req.body;
+      const citaRef = doc(db, "citas", id);
+      await updateDoc(citaRef, {
+        usuarioId,
+        fecha,
+        hora,
+        servicios,
+        duracion,
+        precioTotal,
+        estado,
+        notas,
+      });
+      res.status(200).json({ message: "Cita actualizada" });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
 
     router.delete('/citas/:id', async (req, res) => {
         try {
@@ -258,5 +295,5 @@ module.exports = () => {
     
 
 
-    return router;
+  return router;
 };
