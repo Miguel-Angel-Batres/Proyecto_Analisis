@@ -73,6 +73,7 @@ module.exports = () => {
                     id: userDoc.id,
                     email: userData.email,
                     name: userData.nombre,
+                    phone: userData.phone || null,
                     profilePicture: userData.profilePicture || null,
                     rol: userData.rol || 'usuario', 
                 },
@@ -111,8 +112,14 @@ module.exports = () => {
 
     router.post('/citas', async (req, res) => {
         try {
-            const { usuarioId, fecha, hora, servicios, duracion, precioTotal, estado, notas } = req.body;
-            const citaData = { usuarioId, fecha, hora, servicios, duracion, precioTotal, estado, notas };
+            const { usuarioId, fecha, servicios, duracion, precioTotal } = req.body;
+
+            // Validate input data
+            if (!usuarioId || !fecha || !Array.isArray(servicios) || servicios.length === 0 || !duracion || !precioTotal) {
+                return res.status(400).json({ error: 'Todos los campos son obligatorios y deben ser válidos' });
+            }
+
+            const citaData = { usuarioId, fecha, servicios, duracion, precioTotal };
             const docRef = await addDoc(collection(db, 'citas'), citaData);
             res.status(201).json({ message: 'Cita creada', id: docRef.id });
         } catch (error) {
@@ -142,6 +149,20 @@ module.exports = () => {
             res.status(500).json({ error: error.message });
         }
     });
+    // obtener todas las citas donde el usuarioId es igual al id del usuario
+    router.get('/citas/usuario/:usuarioId', async (req, res) => {
+        try {
+            const { usuarioId } = req.params;
+            const citasSnapshot = await getDocs(collection(db, 'citas'));
+            const citas = citasSnapshot.docs
+                .map(doc => ({ id: doc.id, ...doc.data() }))    
+                .filter(cita => cita.usuarioId === usuarioId);
+            res.status(200).json(citas);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
 
     router.put('/citas/:id', async (req, res) => {
         try {
@@ -161,6 +182,40 @@ module.exports = () => {
             const citaRef = doc(db, 'citas', id);
             await deleteDoc(citaRef);
             res.status(200).json({ message: 'Cita eliminada' });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+    // hacer un pago
+    router.post('/pagos', async (req, res) => {
+        try {
+            const { usuarioId, citaId, monto, metodoPago, titular, numero, exp, cvv } = req.body;
+
+            // Validate input data
+            if (!usuarioId || !citaId || !monto || !metodoPago || !titular || !numero || !exp || !cvv) {
+                return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+            }
+
+            const pagoData = { 
+                usuarioId, 
+                citaId, 
+                monto, 
+                metodoPago, 
+                tarjeta: { titular, numero, exp, cvv }, 
+                fecha: new Date() 
+            };
+            const docRef = await addDoc(collection(db, 'pagos'), pagoData);
+            res.status(201).json({ message: 'Pago realizado', id: docRef.id });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+    //obtener pagos
+    router.get('/pagos', async (req, res) => {
+        try {
+            const pagosSnapshot = await getDocs(collection(db, 'pagos'));
+            const pagos = pagosSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            res.status(200).json(pagos);
         } catch (error) {
             res.status(500).json({ error: error.message });
         }
