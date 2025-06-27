@@ -189,10 +189,10 @@ module.exports = () => {
     // hacer un pago
     router.post('/pagos', async (req, res) => {
         try {
-            const { usuarioId, citaId, monto, metodoPago, titular, numero, exp, cvv } = req.body;
+            const { usuarioId, citaId, monto, titular, numero, exp, cvv } = req.body;
 
             // Validate input data
-            if (!usuarioId || !citaId || !monto || !metodoPago || !titular || !numero || !exp || !cvv) {
+            if (!usuarioId || !citaId || !monto  || !titular || !numero || !exp || !cvv) {
                 return res.status(400).json({ error: 'Todos los campos son obligatorios' });
             }
 
@@ -200,7 +200,6 @@ module.exports = () => {
                 usuarioId, 
                 citaId, 
                 monto, 
-                metodoPago, 
                 tarjeta: { titular, numero, exp, cvv }, 
                 fecha: new Date() 
             };
